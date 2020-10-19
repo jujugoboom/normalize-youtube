@@ -3,10 +3,9 @@
     "version": "1.0",
     "description": "Normalize audio on YouTube videos",
     "manifest_version": 2,
-
     "content_scripts": [{
         "js": ["normalize.js"],
         "matches": ["*://*.youtube.com/watch*"]
     }],
-    "web_accessible_resources": ["replay-gain-processor.js"]
+    "web_accessible_resources": ["replay-gain-processor.js", "3sec-1-mono_44100.wav"]
   }
