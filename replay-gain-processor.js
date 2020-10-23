@@ -34,7 +34,8 @@ class ReplayGainProcessor extends AudioWorkletProcessor {
         for (var channel = 0; channel < outputBuffer.length; channel++) {
             var outputData = outputBuffer[channel];
             for (var i = 0; i < audioInput.length; i++) {
-                outputData[i] = audioInput[i] * gain;
+                // Apply gain value and try to avoid clipping
+                outputData[i] = Math.max(-1, Math.min(1, audioInput[i] * gain));
             }
         }
         return true;
