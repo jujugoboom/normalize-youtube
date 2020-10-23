@@ -3,14 +3,8 @@
 */
 
 class ReplayGainProcessor extends AudioWorkletProcessor {
-    //Maintain a buffer of sums to average out over the suggested ~50ms for ReplayGain
-    sumBuffer = []
-    peakLevelBuffer = []
-    constructor() {
-      // The super constructor call is required.
-      super();
-    }
-  
+    totalSamples = 0;
+    totalLoudness = 0.0;
     process(inputs, outputs, parameters) {
         var inputBuffer = inputs[0];
     
@@ -18,37 +12,25 @@ class ReplayGainProcessor extends AudioWorkletProcessor {
         
         var inputData = inputBuffer[0];
     
-        var s = 0.0;
+        var sum = 0.0;
         for (var i = 0; i < inputData.length; i++) {
-            s += -0.691 + (10 * Math.log10(inputData[i]));
+            sum += -0.691 + (10 * Math.log10(inputData[i]));
         }
-        const sumCallback = (acc, curr) => acc + curr;
-        this.sumBuffer.push(s);
-        if (s / inputData.length > -14) {
-            var audioInput = inputBuffer[1];
-            for (var channel = 0; channel < outputBuffer.length; channel++) {
-                var outputData = outputBuffer[channel];
-                for (var i = 0; i < audioInput.length; i++) {
-                    outputData[i] = audioInput[i]
-                }
-            }
-            return true;
+        var gain;
+        if(isFinite(sum)) {
+            var sampleAvg = sum / inputData.length;
+            this.totalSamples++;
+            this.totalLoudness += sampleAvg;
+            var avgLoudness = (this.totalLoudness / this.totalSamples);
+            var rg = -14 - avgLoudness;
+            var gain = 10 ** (rg/20);
+            gain = Math.max(gain, 0.02);
+            gain = Math.min(gain, 5);
         }
-        var sum = this.sumBuffer.reduce(sumCallback);
-        var avgLoudness = sum / (this.sumBuffer.length * inputData.length);
-        if(this.sumBuffer.length > 1000) {
-            // Moving window buffer
-            this.sumBuffer.shift()
-        }
-        var rg = -14 - avgLoudness;
-        var gain = 10 ** (rg/20);
-        if (rg === -Infinity) {
+        else {
             gain = 1;
         }
-        gain = Math.max(gain, 0.02);
-        gain = Math.min(gain, 5);
         var audioInput = inputBuffer[1];
-        // console.log("Loudness/gain", avgLoudness, gain)
         for (var channel = 0; channel < outputBuffer.length; channel++) {
             var outputData = outputBuffer[channel];
             for (var i = 0; i < audioInput.length; i++) {
