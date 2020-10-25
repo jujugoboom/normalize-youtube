@@ -46,12 +46,11 @@ class ReplayGainProcessor extends AudioWorkletProcessor {
         if(isFinite(sum)) {
             var sampleAvg = sum / inputData.length;
             this.totalSamples++;
-            this.totalLoudness += sampleAvg;
+            // Bound loudness to try to better compensate for silence/really quiet parts at the beginning of a video
+            this.totalLoudness += Math.min(-1, Math.max(-28, sampleAvg));
             var avgLoudness = (this.totalLoudness / this.totalSamples);
             var rg = -14 - avgLoudness;
             var newGain = 10 ** (rg/20);
-            newGain = Math.max(newGain, 0.02);
-            newGain = Math.min(newGain, 5);
             // Apply attack/release envelope
             gain = ( this.coeff * this.lastGain ) + ( ( 1.0 - this.coeff ) * newGain );
         }
