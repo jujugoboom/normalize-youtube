@@ -60,15 +60,11 @@ class ReplayGainProcessor extends AudioWorkletProcessor {
         }
         var audioInput = inputBuffer[1];
         this.applyGain(audioInput, outputBuffer, gain);
-        if(this.totalSamples < 100) {
-            console.log(gain);
-        }
         this.lastGain = gain;
         return true;
     }
 
     reset() {
-        console.log("RESETTING AUDIO WORKLET");
         this.totalLoudness = 0.0;
         this.totalSamples = 0;
         this.lastGain = 1;
