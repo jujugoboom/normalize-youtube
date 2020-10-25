@@ -10,8 +10,8 @@ class ReplayGainProcessor extends AudioWorkletProcessor {
     constructor() {
         super();
         // Setup values for attack/release envelope
-        // Time in seconds
-        var envelopeTime = 2;
+        // Time in ms
+        var envelopeTime = 2000;
         // Sample rate comes from AudioWorkletGlobalScope
         var timeconstant = envelopeTime * sampleRate * 0.001;
         console.log(timeconstant);
@@ -60,6 +60,9 @@ class ReplayGainProcessor extends AudioWorkletProcessor {
         }
         var audioInput = inputBuffer[1];
         this.applyGain(audioInput, outputBuffer, gain);
+        if(this.totalSamples < 100) {
+            console.log(gain);
+        }
         this.lastGain = gain;
         return true;
     }
