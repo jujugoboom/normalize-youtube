@@ -11,9 +11,9 @@ class ReplayGainProcessor extends AudioWorkletProcessor {
         super();
         // Setup values for attack/release envelope
         // Time in ms
-        var envelopeTime = 2000;
+        var envelopeTime = 10000;
         // Sample rate comes from AudioWorkletGlobalScope
-        var timeconstant = envelopeTime * sampleRate * 0.001;
+        var timeconstant = envelopeTime * (sampleRate / 128) * 0.001;
         console.log(timeconstant);
         this.coeff = (1.0 / 0.001) ** (-1.0 / timeconstant);
         this.port.onmessage = (m) => {
@@ -60,6 +60,9 @@ class ReplayGainProcessor extends AudioWorkletProcessor {
         var audioInput = inputBuffer[1];
         this.applyGain(audioInput, outputBuffer, gain);
         this.lastGain = gain;
+        if(this.totalSamples % 375 === 0) {
+            this.port.postMessage({currentGain: this.lastGain, currentLoudness: this.totalLoudness/this.totalSamples});
+        }
         return true;
     }
 

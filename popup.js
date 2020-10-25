@@ -13,4 +13,20 @@ powerButton.onclick = () => {
     updateButton();
 }
 
+gainElement = document.getElementById("current-gain");
+loudnessElement = document.getElementById("average-loudness");
+timeElement = document.getElementById("sample-time")
+setInterval(() => {
+    chrome.storage.local.get("currentGain", (g) => {
+        if(g.currentGain) {
+            gainElement.innerText = g.currentGain;
+        }
+    });
+    chrome.storage.local.get("currentLoudness", (l) => {
+        if (l.currentLoudness) {
+            loudnessElement.innerText = l.currentLoudness;
+        }
+    });
+}, 1000);
+
 updateButton();

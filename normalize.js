@@ -24,7 +24,12 @@ let setupAudioPipeline = (videoElement) => {
                     replayGainNode.port.postMessage({reset: true});
                 }
             })
-        })
+        });
+        replayGainNode.port.onmessage = (m) => {
+            if (m.data.currentGain && m.data.currentLoudness) {
+                chrome.storage.local.set({currentGain: m.data.currentGain, currentLoudness: m.data.currentLoudness});
+            }
+        }
         observer.observe(videoElement, {attributes: true})
     }).catch((e) => console.log(e));
     });
