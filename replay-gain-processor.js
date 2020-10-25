@@ -5,6 +5,32 @@
 class ReplayGainProcessor extends AudioWorkletProcessor {
     totalSamples = 0;
     totalLoudness = 0.0;
+    lastGain = 1;
+    coeff = 0;
+    constructor() {
+        super();
+        // Setup values for attack/release envelope
+        // Time in seconds
+        var envelopeTime = 2;
+        // Sample rate comes from AudioWorkletGlobalScope
+        var timeconstant = envelopeTime * sampleRate * 0.001;
+        console.log(timeconstant);
+        this.coeff = (1.0 / 0.001) ** (-1.0 / timeconstant);
+        this.port.onmessage = (m) => {
+            if (m.data.reset) {
+                this.reset();
+            }
+        }
+    }
+    applyGain(input, outputs, gain) {
+        for (var channel = 0; channel < outputs.length; channel++) {
+            var outputData = outputs[channel];
+            for (var i = 0; i < input.length; i++) {
+                // Apply gain value and try to avoid clipping
+                outputData[i] = Math.max(-1, Math.min(1, input[i] * gain));
+            }
+        }
+    }
     process(inputs, outputs, parameters) {
         var inputBuffer = inputs[0];
     
@@ -23,22 +49,26 @@ class ReplayGainProcessor extends AudioWorkletProcessor {
             this.totalLoudness += sampleAvg;
             var avgLoudness = (this.totalLoudness / this.totalSamples);
             var rg = -14 - avgLoudness;
-            var gain = 10 ** (rg/20);
-            gain = Math.max(gain, 0.02);
-            gain = Math.min(gain, 5);
+            var newGain = 10 ** (rg/20);
+            newGain = Math.max(newGain, 0.02);
+            newGain = Math.min(newGain, 5);
+            // Apply attack/release envelope
+            gain = ( this.coeff * this.lastGain ) + ( ( 1.0 - this.coeff ) * newGain );
         }
         else {
             gain = 1;
         }
         var audioInput = inputBuffer[1];
-        for (var channel = 0; channel < outputBuffer.length; channel++) {
-            var outputData = outputBuffer[channel];
-            for (var i = 0; i < audioInput.length; i++) {
-                // Apply gain value and try to avoid clipping
-                outputData[i] = Math.max(-1, Math.min(1, audioInput[i] * gain));
-            }
-        }
+        this.applyGain(audioInput, outputBuffer, gain);
+        this.lastGain = gain;
         return true;
+    }
+
+    reset() {
+        console.log("RESETTING AUDIO WORKLET");
+        this.totalLoudness = 0.0;
+        this.totalSamples = 0;
+        this.lastGain = 1;
     }
 }
   

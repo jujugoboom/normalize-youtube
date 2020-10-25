@@ -9,7 +9,7 @@
         "persistent": false
     },
     "content_scripts": [{
-        "js": ["normalize.js"],
+        "js": ["normalize.js", "R128.js"],
         "matches": ["*://*.youtube.com/watch*"]
     }],
     "page_action": {
