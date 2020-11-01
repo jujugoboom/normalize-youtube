@@ -4,7 +4,7 @@
 
 class ReplayGainProcessor extends AudioWorkletProcessor {
     totalSamples = 0;
-    totalLoudness = 0.0;
+    avgLoudness = 0.0;
     lastGain = 1;
     coeff = 0;
     constructor() {
@@ -44,12 +44,12 @@ class ReplayGainProcessor extends AudioWorkletProcessor {
         }
         var gain;
         if(isFinite(sum)) {
-            var sampleAvg = sum / inputData.length;
-            this.totalSamples++;
             // Bound loudness to try to better compensate for silence/really quiet parts at the beginning of a video
-            this.totalLoudness += Math.min(-1, Math.max(-28, sampleAvg));
-            var avgLoudness = (this.totalLoudness / this.totalSamples);
-            var rg = -14 - avgLoudness;
+            var sampleAvg = Math.min(-1, Math.max(-28, sum / inputData.length));
+            this.totalSamples++;
+            // Use EMA with factor of 1000 with totalSamples for warmup
+            this.avgLoudness = this.avgLoudness + (sampleAvg - this.avgLoudness) / Math.min(this.totalSamples, 1000);
+            var rg = -14 - this.avgLoudness;
             var newGain = 10 ** (rg/20);
             // Apply attack/release envelope
             gain = ( this.coeff * this.lastGain ) + ( ( 1.0 - this.coeff ) * newGain );
@@ -61,13 +61,14 @@ class ReplayGainProcessor extends AudioWorkletProcessor {
         this.applyGain(audioInput, outputBuffer, gain);
         this.lastGain = gain;
         if(this.totalSamples % 375 === 0) {
-            this.port.postMessage({currentGain: this.lastGain, currentLoudness: this.totalLoudness/this.totalSamples});
+            // Send stats update every second (based on 44.1khz sample rate and frame size of 128)
+            this.port.postMessage({currentGain: this.lastGain, currentLoudness: this.avgLoudness});
         }
         return true;
     }
 
     reset() {
-        this.totalLoudness = 0.0;
+        this.avgLoudness = 0.0;
         this.totalSamples = 0;
         this.lastGain = 1;
     }
