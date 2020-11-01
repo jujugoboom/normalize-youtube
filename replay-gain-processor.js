@@ -47,8 +47,7 @@ class ReplayGainProcessor extends AudioWorkletProcessor {
             // Bound loudness to try to better compensate for silence/really quiet parts at the beginning of a video
             var sampleAvg = Math.min(-1, Math.max(-28, sum / inputData.length));
             this.totalSamples++;
-            // Use EMA with factor of 1000 with totalSamples for warmup
-            this.avgLoudness = this.avgLoudness + (sampleAvg - this.avgLoudness) / Math.min(this.totalSamples, 1000);
+            this.avgLoudness = this.avgLoudness + (sampleAvg - this.avgLoudness) / this.totalSamples;
             var rg = -14 - this.avgLoudness;
             var newGain = 10 ** (rg/20);
             // Apply attack/release envelope
