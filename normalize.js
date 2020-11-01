@@ -17,7 +17,7 @@ let setupAudioPipeline = (videoElement) => {
         audioSrc.connect(audio_data_merger, 0, 1);
         audio_data_merger.connect(replayGainNode);
         replayGainNode.connect(audioCtx.destination);
-        // Youtube only changes src when choosing new video from sidebar
+        // Youtube only changes video src when choosing new video from sidebar
         var observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if(mutation.type === "attributes" && mutation.attributeName === "src"){
@@ -26,6 +26,7 @@ let setupAudioPipeline = (videoElement) => {
             })
         });
         replayGainNode.port.onmessage = (m) => {
+            // Update stats as received
             if (m.data.currentGain && m.data.currentLoudness) {
                 chrome.storage.local.set({currentGain: m.data.currentGain, currentLoudness: m.data.currentLoudness});
             }
